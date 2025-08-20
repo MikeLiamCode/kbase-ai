@@ -46,3 +46,8 @@ pytest tests/
 - No persistence: data is lost on restart, not suitable for production or large-scale deployments.
 - Simple setup, minimal configuration required.
 - Limited scalability; for large datasets or production, a persistent vector DB is recommended.
+
+### Ingestion Flow
+ - Current ingestion is performed via a simple script for rapid prototyping and demonstration.
+ - For production or large-scale systems, a job-based ingestion flow (e.g., background worker, queue, or scheduled job) is recommended for reliability, scalability, and monitoring.
+ - The choice depends on requirements: scripts are fast and easy, jobs are robust and production-ready.
