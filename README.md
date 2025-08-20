@@ -28,6 +28,17 @@ python src/ingestion.py <file1.txt> <file2.txt> ...
 ```
 This will process each file, store its metadata and embedding in the vector database, and print the results.
 
+## Semantic Search
+To perform semantic search over your ingested documents, use the `semantic_search` function in `src/search.py`:
+
+```python
+from src import search
+results = search.semantic_search("your query here", top_k=5)
+for match in results:
+    print(match["document"], match["metadata"], match["distance"])
+```
+This will return the top matching document chunks, their metadata, and similarity scores.
+
 ## Design Decisions & Trade-offs
 - In-memory vector DB (Chroma) for speed and simplicity
 - Pre-trained embedding models (OpenAI)
