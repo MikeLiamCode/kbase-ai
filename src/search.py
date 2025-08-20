@@ -16,9 +16,9 @@ def semantic_search(query: str, top_k: int = 5):
     Returns:
         List[dict]: List of top matching chunks with metadata and score.
     """
-    query_embedding = model.encode(query)
+    query_embeddings = model.encode([query])
     results = collection.query(
-        query_embeddings=[query_embedding],
+        query_embeddings=query_embeddings,
         n_results=top_k,
         include=["documents", "metadatas", "embeddings", "distances"]
     )
