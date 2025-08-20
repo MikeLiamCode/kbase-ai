@@ -30,6 +30,8 @@ for doc_path in TEST_DOCS:
 class SearchRequest(BaseModel):
     query: str
     top_k: int = 5
+    page: int = 1
+    page_size: int = 5
 
 class SearchResult(BaseModel):
     document: str
@@ -47,12 +49,15 @@ def search_endpoint(request: SearchRequest) -> List[SearchResult]:
     """
     Perform semantic search for the given query and return top-k results.
     """
+    start = (request.page - 1) * request.page_size
+    end = start + request.page_size
     results = search.semantic_search(request.query, top_k=request.top_k)
+    paginated = results[start:end]
     return [SearchResult(
         document=r["document"],
         metadata=r["metadata"],
         distance=r["distance"]
-    ) for r in results]
+    ) for r in paginated]
 
 class CompletenessResponse(BaseModel):
     covered: bool

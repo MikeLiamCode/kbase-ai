@@ -41,14 +41,17 @@ This will return the top matching document chunks, their metadata, and similarit
 
 ## API Endpoints
 
+
 ### `/search` (POST)
-Semantic search over the knowledge base.
+Semantic search over the knowledge base, with pagination and batching support.
 
 **Request:**
 ```json
 {
   "query": "your question here",
-  "top_k": 5
+  "top_k": 10,
+  "page": 1,
+  "page_size": 5
 }
 ```
 
@@ -63,6 +66,10 @@ Semantic search over the knowledge base.
   ...
 ]
 ```
+
+**Notes:**
+- Use `page` and `page_size` to paginate large result sets.
+- The backend supports batching for future multi-query extensions.
 
 ### `/completeness` (GET)
 Check if the knowledge base covers a query.
