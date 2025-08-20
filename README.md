@@ -21,6 +21,13 @@ This project implements a backend system for ingesting documents, generating vec
    ```
 3. See API docs at `/docs` when server is running.
 
+## Document Ingestion
+To ingest documents and generate embeddings, run:
+```bash
+python src/ingestion.py <file1.txt> <file2.txt> ...
+```
+This will process each file, store its metadata and embedding in the vector database, and print the results.
+
 ## Design Decisions & Trade-offs
 - In-memory vector DB (Chroma) for speed and simplicity
 - Pre-trained embedding models (OpenAI)
@@ -46,3 +53,8 @@ pytest tests/
 - No persistence: data is lost on restart, not suitable for production or large-scale deployments.
 - Simple setup, minimal configuration required.
 - Limited scalability; for large datasets or production, a persistent vector DB is recommended.
+
+### Ingestion Flow
+ - Current ingestion is performed via a simple script for rapid prototyping and demonstration.
+ - For production or large-scale systems, a job-based ingestion flow (e.g., background worker, queue, or scheduled job) is recommended for reliability, scalability, and monitoring.
+ - The choice depends on requirements: scripts are fast and easy, jobs are robust and production-ready.

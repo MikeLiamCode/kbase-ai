@@ -1,5 +1,6 @@
-fastapi
-uvicorn
-chroma
-sentence-transformers
-pytest
+fastapi==0.116.1
+uvicorn==0.35.0
+chromadb==1.0.20
+sentence-transformers==5.1.0
+pytest==8.4.1
+numpy==1.26.4
