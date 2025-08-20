@@ -12,7 +12,7 @@ CHUNK_SIZE = 1000
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
-collection = chroma_client.create_collection(name="documents")
+collection = chroma_client.get_or_create_collection(name="documents")
 
 def ingest_file(filepath: str) -> Dict[str, Any]:
     """
