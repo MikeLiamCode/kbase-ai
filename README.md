@@ -87,7 +87,7 @@ Check if the knowledge base covers a query.
 
 See interactive docs at `/docs` when the server is running.
 
-## Design Decisions & Trade-offs
+## Design Decisions
 - In-memory vector DB (Chroma) for speed and simplicity
 - Pre-trained embedding models (OpenAI)
 - Minimal chunking for large files
@@ -103,18 +103,22 @@ Tests cover document ingestion (including chunking and incremental updates), sem
 ## Trade-offs
 
 ### HuggingFace Embeddings
+
 - Open-source and free for local use, avoiding API costs and rate limits.
 - Slightly lower accuracy and performance compared to proprietary OpenAI models, but sufficient for prototyping and most use cases.
 - No need for API keys or internet access, enabling fully local development and deployment.
 - Larger resource requirements for running models locally (CPU/GPU).
 
 ### In-Memory ChromaDB
+
 - Extremely fast for prototyping and small/medium datasets.
 - No persistence: data is lost on restart, not suitable for production or large-scale deployments.
 - Simple setup, minimal configuration required.
 - Limited scalability; for large datasets or production, a persistent vector DB is recommended.
 
 ### Ingestion Flow
- - Current ingestion is performed via a simple script for rapid prototyping and demonstration.
- - For production or large-scale systems, a job-based ingestion flow (e.g., background worker, queue, or scheduled job) is recommended for reliability, scalability, and monitoring.
- - The choice depends on requirements: scripts are fast and easy, jobs are robust and production-ready.
+
+- Current ingestion is performed both via a simple script and automatically at app server startup. This dual approach ensures the knowledge base is always initialized and up-to-date when the API server runs, making the demo experience seamless and reducing manual steps for users. Script-based ingestion is fast and flexible for prototyping, while server startup ingestion guarantees the backend is ready for queries immediately after launch.
+- Importantly, because the vector database is in-memory, running ingestion in a separate process (via script) would not populate the data for the API server process—each would have its own isolated memory. Therefore, ingestion at server startup is required to ensure the API has access to the ingested data in the same process.
+- For production or large-scale systems, a job-based ingestion flow (e.g., background worker, queue, or scheduled job) is recommended for reliability, scalability, and monitoring.
+- The choice depends on requirements: scripts are fast and easy, jobs are robust and production-ready.
