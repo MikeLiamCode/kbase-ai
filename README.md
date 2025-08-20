@@ -21,6 +21,13 @@ This project implements a backend system for ingesting documents, generating vec
    ```
 3. See API docs at `/docs` when server is running.
 
+## Document Ingestion
+To ingest documents and generate embeddings, run:
+```bash
+python src/ingestion.py <file1.txt> <file2.txt> ...
+```
+This will process each file, store its metadata and embedding in the vector database, and print the results.
+
 ## Design Decisions & Trade-offs
 - In-memory vector DB (Chroma) for speed and simplicity
 - Pre-trained embedding models (OpenAI)
