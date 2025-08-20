@@ -39,6 +39,47 @@ for match in results:
 ```
 This will return the top matching document chunks, their metadata, and similarity scores.
 
+## API Endpoints
+
+### `/search` (POST)
+Semantic search over the knowledge base.
+
+**Request:**
+```json
+{
+  "query": "your question here",
+  "top_k": 5
+}
+```
+
+**Response:**
+```json
+[
+  {
+    "document": "...",
+    "metadata": {"filename": "...", ...},
+    "distance": 0.123
+  },
+  ...
+]
+```
+
+### `/completeness` (GET)
+Check if the knowledge base covers a query.
+
+**Request:**
+`/completeness?query=your+question+here`
+
+**Response:**
+```json
+{
+  "covered": true,
+  "coverage_score": 0.85
+}
+```
+
+See interactive docs at `/docs` when the server is running.
+
 ## Design Decisions & Trade-offs
 - In-memory vector DB (Chroma) for speed and simplicity
 - Pre-trained embedding models (OpenAI)
