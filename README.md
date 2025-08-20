@@ -98,6 +98,7 @@ Run tests with:
 ```bash
 pytest tests/
 ```
+Tests cover document ingestion (including chunking and incremental updates), semantic search, and API endpoints (including pagination and completeness checks).
 
 ## Trade-offs
 
