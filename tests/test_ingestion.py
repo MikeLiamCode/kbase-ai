@@ -10,8 +10,9 @@ def test_ingest_file_success(tmp_path):
     assert result['metadata']['filename'] == "test.txt"
     assert result['metadata']['extension'] == ".txt"
     assert result['metadata']['size'] == len(test_content)
-    assert result['embedding'] is not None
-    assert hasattr(result['embedding'], 'shape')
+    assert result['embeddings'] is not None
+    assert isinstance(result['embeddings'], list) or hasattr(result['embeddings'], 'shape')
+    assert len(result['embeddings']) >= 1
 
 
 def test_ingest_file_unsupported(tmp_path):
@@ -31,4 +32,5 @@ def test_ingest_files_multiple(tmp_path):
     assert len(results) == 3
     for i, res in enumerate(results):
         assert res['metadata']['filename'] == f"doc{i}.txt"
-        assert res['embedding'] is not None
+        assert res['embeddings'] is not None
+        assert len(res['embeddings']) >= 1

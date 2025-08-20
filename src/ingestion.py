@@ -7,6 +7,8 @@ import sys
 
 SUPPORTED_EXTENSIONS = ['.txt']
 
+CHUNK_SIZE = 1000
+
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
@@ -14,11 +16,12 @@ collection = chroma_client.create_collection(name="documents")
 
 def ingest_file(filepath: str) -> Dict[str, Any]:
     """
-    Ingest a single text file, generate its embedding, and store in ChromaDB.
+    Ingest a single text file, generate its embedding(s), and store in ChromaDB.
+    Supports incremental updates and chunking for large files.
     Args:
         filepath (str): Path to the file to ingest.
     Returns:
-        dict: Metadata and embedding for the ingested file.
+        dict: Metadata and embedding(s) for the ingested file.
     Raises:
         ValueError: If file extension is not supported.
     """
@@ -32,14 +35,19 @@ def ingest_file(filepath: str) -> Dict[str, Any]:
         'extension': ext,
         'size': os.path.getsize(filepath)
     }
-    embedding = model.encode(content)
+    chunks = [content[i:i+CHUNK_SIZE] for i in range(0, len(content), CHUNK_SIZE)]
+    embeddings = model.encode(chunks)
+    ids = [f"{metadata['filename']}_chunk{i}" for i in range(len(chunks))]
+    existing = collection.get(ids=ids)
+    if existing and existing['ids']:
+        collection.delete(ids=existing['ids'])
     collection.add(
-        documents=[content],
-        metadatas=[metadata],
-        embeddings=[embedding],
-        ids=[metadata['filename']]
+        documents=chunks,
+        metadatas=[metadata]*len(chunks),
+        embeddings=embeddings,
+        ids=ids
     )
-    return {'metadata': metadata, 'embedding': embedding}
+    return {'metadata': metadata, 'embeddings': embeddings, 'ids': ids}
 
 def ingest_files(filepaths: List[str]) -> List[Dict[str, Any]]:
     """
