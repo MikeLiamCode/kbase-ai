@@ -9,7 +9,6 @@ SUPPORTED_EXTENSIONS = ['.txt']
 CHUNK_SIZE = 1000
 model = SentenceTransformer('all-MiniLM-L6-v2')
 chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
-collection = chroma_client.get_or_create_collection(name="knowledge_base")
 
 
 def get_shard_name_from_path(filepath: str) -> str:
