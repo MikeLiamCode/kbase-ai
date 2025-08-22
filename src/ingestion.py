@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.config import Settings
-import sys
+
 
 SUPPORTED_EXTENSIONS = ['.txt']
 CHUNK_SIZE = 1000
@@ -53,26 +53,38 @@ def ingest_file(filepath: str) -> Dict[str, Any]:
     shard_name = get_shard_name_from_path(filepath)
     shard_collection = chroma_client.get_or_create_collection(name=shard_name)
     existing = shard_collection.get(ids=ids)
+    update_needed = True
     if existing and existing['ids']:
-        shard_collection.delete(ids=existing['ids'])
-    shard_collection.add(
-        documents=chunks,
-        metadatas=[metadata]*len(chunks),
-        embeddings=embeddings,
-        ids=ids
-    )
+        old_docs = existing.get('documents', [[]])[0]
+        old_embeds = existing.get('embeddings')
+        old_embeds = [] if old_embeds is None else old_embeds[0]
+        if (
+            old_docs == chunks
+            and all(
+                (e == o).all() if hasattr(e, 'all') else e == o
+                for e, o in zip(embeddings, old_embeds)
+            )
+        ):
+            update_needed = False
+        else:
+            shard_collection.delete(ids=existing['ids'])
+    if update_needed:
+        shard_collection.add(
+            documents=chunks,
+            metadatas=[metadata]*len(chunks),
+            embeddings=embeddings,
+            ids=ids
+        )
     return {'metadata': metadata, 'embeddings': embeddings, 'ids': ids}
+
 
 def ingest_files(filepaths: List[str]) -> List[Dict[str, Any]]:
     """
-    Ingest multiple text files and store their embeddings in ChromaDB shards/collections.
+    Ingest multiple text files and store their embeddings in
+    ChromaDB shards/collections.
     Args:
         filepaths (List[str]): List of file paths to ingest.
     Returns:
         List[dict]: List of metadata and embeddings for each ingested file.
     """
     return [ingest_file(fp) for fp in filepaths]
-
-if __name__ == "__main__":
-    for fp in sys.argv[1:]:
-        print(ingest_file(fp))

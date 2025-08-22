@@ -1,4 +1,3 @@
-import pytest
 from src import ingestion
 
 LARGE_TEXT = "A" * (ingestion.CHUNK_SIZE * 2 + 100)
@@ -23,12 +22,28 @@ def test_incremental_update(tmp_path):
     result2 = ingestion.ingest_file(str(test_file))
     ids2 = set(result2['ids'])
     assert ids1 == ids2
-    assert any((e1 != e2).any() for e1, e2 in zip(result1['embeddings'], result2['embeddings']))
+    embeddings1 = result1['embeddings']
+    embeddings2 = result2['embeddings']
+    changed = False
+    for e1, e2 in zip(embeddings1, embeddings2):
+        try:
+            if hasattr(e1, 'all'):
+                if not (e1 == e2).all():
+                    changed = True
+            else:
+                if e1 != e2:
+                    changed = True
+        except Exception:
+            if e1 != e2:
+                changed = True
+    assert changed
 
 
 def test_chunking_and_update(tmp_path):
     test_file = tmp_path / "mix.txt"
-    test_file.write_text("A" * ingestion.CHUNK_SIZE + "B" * ingestion.CHUNK_SIZE)
+    test_file.write_text(
+        "A" * ingestion.CHUNK_SIZE + "B" * ingestion.CHUNK_SIZE
+    )
     result1 = ingestion.ingest_file(str(test_file))
     assert len(result1['embeddings']) == 2
     test_file.write_text("C" * (ingestion.CHUNK_SIZE // 2))
