@@ -5,7 +5,6 @@ from chromadb.config import Settings
 from concurrent.futures import ThreadPoolExecutor
 
 chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
-collection = chroma_client.get_or_create_collection(name="knowledge_base")
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
