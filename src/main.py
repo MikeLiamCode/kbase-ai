@@ -23,15 +23,30 @@ for doc_path in TEST_DOCS:
             pass
 
 class SearchRequest(BaseModel):
+    """
+    Request model for semantic search endpoint.
+    Args:
+        query (str): The search query.
+        top_k (int): Number of top results to return.
+        page (int): Page number for pagination.
+        page_size (int): Number of results per page.
+    """
     query: str
     top_k: int = 5
     page: int = 1
     page_size: int = 5
 
 class SearchResult(BaseModel):
-    document: list[str]
-    metadata: list[dict]
-    distance: list[float]
+    """
+    Response model for a single semantic search result.
+    Args:
+        document (str): The document text.
+        metadata (dict): Metadata for the document.
+        distance (float): Similarity distance.
+    """
+    document: str
+    metadata: dict
+    distance: float
 
 
 @app.post(
@@ -44,23 +59,31 @@ class SearchResult(BaseModel):
 def search_endpoint(request: SearchRequest) -> List[SearchResult]:
     """
     Perform semantic search for the given query and return top-k results.
+    Args:
+        request (SearchRequest): The search request.
+    Returns:
+        List[SearchResult]: List of search results for the query.
     """
     results = search.semantic_search(request.query, top_k=request.top_k)
     start = (request.page - 1) * request.page_size
     end = start + request.page_size
-    paginated_docs = results["document"][start:end]
-    paginated_metas = results["metadata"][start:end]
-    paginated_dists = results["distance"][start:end]
-
+    paginated = results[start:end]
     return [
         SearchResult(
-            document=paginated_docs,
-            metadata=paginated_metas,
-            distance=paginated_dists
-        )
+            document=item["document"],
+            metadata=item["metadata"],
+            embedding=item["embedding"],
+            distance=item["distance"]
+        ) for item in paginated
     ]
 
 class CompletenessResponse(BaseModel):
+    """
+    Response model for completeness check endpoint.
+    Args:
+        covered (bool): Whether the query is covered.
+        coverage_score (float): Coverage score for the query.
+    """
     covered: bool
     coverage_score: float
 
@@ -74,15 +97,10 @@ class CompletenessResponse(BaseModel):
 def completeness_endpoint(query: str = Query(..., description="Query to check coverage")) -> CompletenessResponse:
     """
     Check if the knowledge base covers the given query and return a coverage score.
+    Args:
+        query (str): The query to check coverage for.
+    Returns:
+        CompletenessResponse: Coverage information for the query.
     """
-    try:
-        results = search.semantic_search(query, top_k=1)
-        if results["distance"]:
-            score = 1.0 - results["distance"][0]
-            covered = score > 0.7
-        else:
-            score = 0.0
-            covered = False
-        return CompletenessResponse(covered=covered, coverage_score=score)
-    except Exception:
-        return CompletenessResponse(covered=False, coverage_score=0.0)
+    result = search.check_completeness(query)
+    return CompletenessResponse(**result)

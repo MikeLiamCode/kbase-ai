@@ -8,7 +8,7 @@ This project implements a backend system for ingesting documents, generating vec
 - Semantic search service (parallel search across all shards)
 - REST API for Q&A and completeness check
 - Efficient queries across thousands of documents
-- Incremental indexing and large file support
+- Incremental indexing and large file support (skips updates for unchanged documents)
 
 ## Quickstart
 1. Install dependencies:
@@ -22,17 +22,17 @@ This project implements a backend system for ingesting documents, generating vec
 3. See API docs at `/docs` when server is running.
 
 ## Document Ingestion
-To ingest documents and generate embeddings, run:
-```bash
-python src/ingestion.py <file1.txt> <file2.txt> ...
-```
-This will process each file, store its metadata and embedding in the vector database, and print the results.
+Automatic ingestion occurs at API server startup, scanning all `.txt` files in all subfolders of `tests/docs/` and calling `ingest_file` for each file.
 
+Supported file types: Only `.txt` files are accepted. Attempting to ingest other file types will raise a `ValueError`.
+
+Chunk size: Each document is split into chunks of 1000 characters for embedding and storage. This value can be modified in the code.
 **Note:**
-- All `.txt` files in all subfolders of `tests/docs/` are ingested recursively.
+- All `.txt` files in all subfolders of `tests/docs/` are ingested recursively at API server startup.
 - Each subfolder is treated as a separate ChromaDB collection (shard).
 
 ## Semantic Search
+The internal search results include the embedding vector for each match, though this is not exposed in the public API response.
 To perform semantic search over your ingested documents, use the `semantic_search` function in `src/search.py`:
 
 ```python
@@ -46,6 +46,7 @@ This will return the top matching document chunks, their metadata, and similarit
 ## API Endpoints
 
 ### `/search` (POST)
+Results are paginated after semantic search. The API returns only the requested page of results, based on the `page` and `page_size` parameters.
 Semantic search over the knowledge base, with pagination and batching support.
 
 **Request:**
@@ -59,14 +60,16 @@ Semantic search over the knowledge base, with pagination and batching support.
 ```
 
 **Response:**
-The response is a list containing a single object, with each field as a list:
+
+The response is a list of objects, each with scalar fields:
 ```json
 [
   {
-    "document": ["...", "...", ...],
-    "metadata": [ {"filename": "...", ...}, ... ],
-    "distance": [0.123, ...]
-  }
+    "document": "...",
+    "metadata": { "filename": "...", ... },
+    "distance": 0.123
+  },
+  ...
 ]
 ```
 
@@ -76,6 +79,7 @@ The response is a list containing a single object, with each field as a list:
 - Search is performed in parallel across all shards (subfolders in `tests/docs/`).
 
 ### `/completeness` (GET)
+Coverage score is calculated as `1.0 - distance` of the top search result. Coverage is determined by whether the score exceeds a threshold (default: 0.7).
 Check if the knowledge base covers a query.
 
 **Request:**
@@ -103,7 +107,10 @@ Run tests with:
 ```bash
 pytest tests/
 ```
-Tests cover document ingestion (including chunking and incremental updates), semantic search, and API endpoints (including pagination and completeness checks).
+Tests cover:
+- Document ingestion (including chunking, incremental updates, and error cases)
+- Semantic search (including parallel search and sharding)
+- API endpoints (including pagination and completeness checks)
 
 ## Trade-offs
 
