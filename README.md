@@ -4,8 +4,8 @@
 This project implements a backend system for ingesting documents, generating vector embeddings, and providing semantic search and Q&A capabilities. Designed for rapid prototyping and demonstration.
 
 ## Features
-- Document ingestion pipeline (raw + vector embeddings)
-- Semantic search service
+- Document ingestion pipeline (raw + vector embeddings, sharded by subfolder)
+- Semantic search service (parallel search across all shards)
 - REST API for Q&A and completeness check
 - Efficient queries across thousands of documents
 - Incremental indexing and large file support
@@ -28,6 +28,10 @@ python src/ingestion.py <file1.txt> <file2.txt> ...
 ```
 This will process each file, store its metadata and embedding in the vector database, and print the results.
 
+**Note:**
+- All `.txt` files in all subfolders of `tests/docs/` are ingested recursively.
+- Each subfolder is treated as a separate ChromaDB collection (shard).
+
 ## Semantic Search
 To perform semantic search over your ingested documents, use the `semantic_search` function in `src/search.py`:
 
@@ -40,7 +44,6 @@ for match in results:
 This will return the top matching document chunks, their metadata, and similarity scores.
 
 ## API Endpoints
-
 
 ### `/search` (POST)
 Semantic search over the knowledge base, with pagination and batching support.
@@ -56,20 +59,21 @@ Semantic search over the knowledge base, with pagination and batching support.
 ```
 
 **Response:**
+The response is a list containing a single object, with each field as a list:
 ```json
 [
   {
-    "document": "...",
-    "metadata": {"filename": "...", ...},
-    "distance": 0.123
-  },
-  ...
+    "document": ["...", "...", ...],
+    "metadata": [ {"filename": "...", ...}, ... ],
+    "distance": [0.123, ...]
+  }
 ]
 ```
 
 **Notes:**
 - Use `page` and `page_size` to paginate large result sets.
 - The backend supports batching for future multi-query extensions.
+- Search is performed in parallel across all shards (subfolders in `tests/docs/`).
 
 ### `/completeness` (GET)
 Check if the knowledge base covers a query.
@@ -89,9 +93,10 @@ See interactive docs at `/docs` when the server is running.
 
 ## Design Decisions
 - In-memory vector DB (Chroma) for speed and simplicity
-- Pre-trained embedding models (OpenAI)
+- Pre-trained embedding models (OpenAI or HuggingFace)
 - Minimal chunking for large files
 - Focus on core flows, limited edge case handling
+- Sharding by subfolder for scalability and parallel search
 
 ## Testing
 Run tests with:
@@ -115,6 +120,7 @@ Tests cover document ingestion (including chunking and incremental updates), sem
 - No persistence: data is lost on restart, not suitable for production or large-scale deployments.
 - Simple setup, minimal configuration required.
 - Limited scalability; for large datasets or production, a persistent vector DB is recommended.
+- Sharding by subfolder enables parallel search and better scalability for thousands of documents.
 
 ### Ingestion Flow
 
